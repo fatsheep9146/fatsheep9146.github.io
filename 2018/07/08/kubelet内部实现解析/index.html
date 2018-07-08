@@ -87,12 +87,21 @@
 
 
 
-<meta property="og:type" content="website">
-<meta property="og:title" content="Hexo">
-<meta property="og:url" content="http://yoursite.com/index.html">
+<meta name="description" content="文章简介kubelet 组件主要负责管理这台机器上面的 pod 的生命周期，以及这台机器的一些状态的更新与上报。这篇文章的目的就在于对 kubelet 整体的设计框架进行分析。并不会对任意一个子功能的细节进行深入的介绍。
+kubelet 内部结构kubelet 内部其实是由多个子模块来构成的，每个子模块都单独负责一部分的任务，而所有的子模块都由下面两个对象来管理，这两个对象也是 kubelet 中">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kubelet内部实现解析">
+<meta property="og:url" content="http://yoursite.com/2018/07/08/kubelet内部实现解析/index.html">
 <meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="文章简介kubelet 组件主要负责管理这台机器上面的 pod 的生命周期，以及这台机器的一些状态的更新与上报。这篇文章的目的就在于对 kubelet 整体的设计框架进行分析。并不会对任意一个子功能的细节进行深入的介绍。
+kubelet 内部结构kubelet 内部其实是由多个子模块来构成的，每个子模块都单独负责一部分的任务，而所有的子模块都由下面两个对象来管理，这两个对象也是 kubelet 中">
+<meta property="og:image" content="http://yoursite.com/kubelet_structure_0.png">
+<meta property="og:updated_time" content="2018-07-08T12:17:57.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Hexo">
+<meta name="twitter:title" content="kubelet内部实现解析">
+<meta name="twitter:description" content="文章简介kubelet 组件主要负责管理这台机器上面的 pod 的生命周期，以及这台机器的一些状态的更新与上报。这篇文章的目的就在于对 kubelet 整体的设计框架进行分析。并不会对任意一个子功能的细节进行深入的介绍。
+kubelet 内部结构kubelet 内部其实是由多个子模块来构成的，每个子模块都单独负责一部分的任务，而所有的子模块都由下面两个对象来管理，这两个对象也是 kubelet 中">
+<meta name="twitter:image" content="http://yoursite.com/kubelet_structure_0.png">
 
 
 
@@ -120,13 +129,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/"/>
+  <link rel="canonical" href="http://yoursite.com/2018/07/08/kubelet内部实现解析/"/>
 
 
 
 
 
-  <title> Hexo </title>
+  <title> kubelet内部实现解析 | Hexo </title>
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" lang="">
@@ -151,9 +160,7 @@
     
   
 
-  <div class="container one-collumn sidebar-position-left 
-   page-home 
- ">
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -234,9 +241,9 @@
         <div class="content-wrap">
           <div id="content" class="content">
             
-  <section id="posts" class="posts-expand">
+
+  <div id="posts" class="posts-expand">
     
-      
 
   
 
@@ -269,10 +276,7 @@
             
             
               
-                
-                <a class="post-title-link" href="/2018/07/08/kubelet内部实现解析/" itemprop="url">
-                  kubelet内部实现解析
-                </a>
+                kubelet内部实现解析
               
             
           </h1>
@@ -323,9 +327,7 @@
       
 
       
-        
-          
-            <h1 id="文章简介"><a href="#文章简介" class="headerlink" title="文章简介"></a>文章简介</h1><p>kubelet 组件主要负责管理这台机器上面的 pod 的生命周期，以及这台机器的一些状态的更新与上报。这篇文章的目的就在于对 kubelet 整体的设计框架进行分析。并不会对任意一个子功能的细节进行深入的介绍。</p>
+        <h1 id="文章简介"><a href="#文章简介" class="headerlink" title="文章简介"></a>文章简介</h1><p>kubelet 组件主要负责管理这台机器上面的 pod 的生命周期，以及这台机器的一些状态的更新与上报。这篇文章的目的就在于对 kubelet 整体的设计框架进行分析。并不会对任意一个子功能的细节进行深入的介绍。</p>
 <h1 id="kubelet-内部结构"><a href="#kubelet-内部结构" class="headerlink" title="kubelet 内部结构"></a>kubelet 内部结构</h1><p>kubelet 内部其实是由多个子模块来构成的，每个子模块都单独负责一部分的任务，而所有的子模块都由下面两个对象来管理，这两个对象也是 kubelet 中最重要的两个对象</p>
 <ul>
 <li><p>kubeletDeps：该对象中包含一系列 kubelet 依赖的外部功能，比如 cadvisor，containerManager(负责 cgroup 管理)。</p>
@@ -372,16 +374,20 @@
 <li><a href="https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node/pod-lifecycle-event-generator.md" target="_blank" rel="external">https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node/pod-lifecycle-event-generator.md</a></li>
 </ol>
 
-          
+      
+    </div>
+
+    <div>
+      
         
+
       
     </div>
 
     <div>
       
-    </div>
+        
 
-    <div>
       
     </div>
 
@@ -390,150 +396,38 @@
       
 
       
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-  <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/02/08/hello-world/">
-
-  <span style="display:none" itemprop="author" itemscope itemtype="http://schema.org/Person">
-    <meta itemprop="name" content="John Doe">
-    <meta itemprop="description" content="">
-    <meta itemprop="image" content="/images/avatar.gif">
-  </span>
-
-  <span style="display:none" itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-    <meta itemprop="name" content="Hexo">
-    <span style="display:none" itemprop="logo" itemscope itemtype="http://schema.org/ImageObject">
-      <img style="display:none;" itemprop="url image" alt="Hexo" src="">
-    </span>
-  </span>
-
-    
-      <header class="post-header">
-
         
-        
-          <h1 class="post-title" itemprop="name headline">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
             
+              <a href="/2017/02/08/hello-world/" rel="next" title="Hello World">
+                <i class="fa fa-chevron-left"></i> Hello World
+              </a>
             
-              
-                
-                <a class="post-title-link" href="/2017/02/08/hello-world/" itemprop="url">
-                  Hello World
-                </a>
-              
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
             
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">Posted on</span>
-              
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2017-02-08T10:12:56+08:00">
-                2017-02-08
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
+          </div>
         </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
       
 
       
-        
-          
-            <p>Welcome to <a href="https://hexo.io/" target="_blank" rel="external">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="external">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="external">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="external">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo new <span class="string">"My New Post"</span></div></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="external">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo server</div></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="external">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo generate</div></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="external">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo deploy</div></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="external">Deployment</a></p>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
       
     </footer>
   </article>
 
 
-    
-  </section>
 
-  
+    <div class="post-spread">
+      
+    </div>
+  </div>
 
           
           </div>
@@ -541,6 +435,10 @@
 
 
           
+  <div class="comments" id="comments">
+    
+  </div>
+
 
         </div>
         
@@ -560,8 +458,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
 
-      <section class="site-overview sidebar-panel sidebar-panel-active">
+      <section class="site-overview sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
           <img class="site-author-image" itemprop="image"
                src="/images/avatar.gif"
@@ -603,6 +510,22 @@
 
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#文章简介"><span class="nav-number">1.</span> <span class="nav-text">文章简介</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#kubelet-内部结构"><span class="nav-number">2.</span> <span class="nav-text">kubelet 内部结构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#消息生产者，消费者简述"><span class="nav-number">2.1.</span> <span class="nav-text">消息生产者，消费者简述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#kubelet-节点状态的守护进程"><span class="nav-number">2.2.</span> <span class="nav-text">kubelet 节点状态的守护进程</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考引用"><span class="nav-number">3.</span> <span class="nav-text">参考引用</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
     </div>
@@ -702,6 +625,10 @@
   
 
   
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
 
   
 
