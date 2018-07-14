@@ -192,7 +192,7 @@
             
               <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
             
-            Home
+            Startseite
           </a>
         </li>
       
@@ -202,7 +202,7 @@
             
               <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
             
-            Archives
+            Archiv
           </a>
         </li>
       
@@ -285,7 +285,7 @@
                 <i class="fa fa-calendar-o"></i>
               </span>
               
-                <span class="post-meta-item-text">Posted on</span>
+                <span class="post-meta-item-text">Veröffentlicht am</span>
               
               <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-07-08T20:09:49+08:00">
                 2018-07-08
@@ -325,30 +325,35 @@
       
         
           
-            <h1 id="文章简介"><a href="#文章简介" class="headerlink" title="文章简介"></a>文章简介</h1><p>kubelet 组件主要负责管理这台机器上面的 pod 的生命周期，以及这台机器的一些状态的更新与上报。这篇文章的目的就在于对 kubelet 整体的设计框架进行分析。并不会对任意一个子功能的细节进行深入的介绍。</p>
-<h1 id="kubelet-内部结构"><a href="#kubelet-内部结构" class="headerlink" title="kubelet 内部结构"></a>kubelet 内部结构</h1><p>kubelet 内部其实是由多个子模块来构成的，每个子模块都单独负责一部分的任务，而所有的子模块都由下面两个对象来管理，这两个对象也是 kubelet 中最重要的两个对象</p>
+            <h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p>kubelet 组件作为每台 kubernetes 集群中每台计算节点上运行的 agent，主要职责有两个</p>
 <ul>
-<li><p>kubeletDeps：该对象中包含一系列 kubelet 依赖的外部功能，比如 cadvisor，containerManager(负责 cgroup 管理)。</p>
+<li>管理这台机器上面的 pod 的生命周期，</li>
+<li>自动上报，并且维护这台计算节点的状态</li>
+</ul>
+<p>这篇文章的目的就在于对 kubelet 整体的设计框架进行分析。并不会对任意一个子功能的细节进行深入的介绍。后续会有一系列文章对 kubelet 组件的各种功能进行详细的介绍。</p>
+<h1 id="kubelet-内部结构"><a href="#kubelet-内部结构" class="headerlink" title="kubelet 内部结构"></a>kubelet 内部结构</h1><p>kubelet 内部其实是由多个【子模块】来构成的，每个子模块都单独负责一部分的任务，而在代码中，所有的子模块对象都包含在下面两个对象中，这两个对象也是 kubelet 中最重要的两个对象</p>
+<ul>
+<li><p>kubeDeps：该对象（类型为 <a href="https://github.com/kubernetes/kubernetes/blob/dd5e1a2978fd0b97d9b78e1564398aeea7e7fe92/pkg/kubelet/kubelet.go#L229" target="_blank" rel="external">Dependencies</a>）主要包含一些 kubelet 依赖的外部功能，比如 cadvisor（监控功能），containerManager（cgroup 管理功能）。</p>
 </li>
-<li><p>kubelet：kubelet 对象则代表 kubelet 自身，其中也包括很多子模块，用于完成不同的功能。</p>
+<li><p>kubelet：kubelet 对象（类型为 <a href="https://github.com/kubernetes/kubernetes/blob/dd5e1a2978fd0b97d9b78e1564398aeea7e7fe92/pkg/kubelet/kubelet.go#L931" target="_blank" rel="external">Kubelet</a>）则代表 kubelet 内部跟 pod 息息相关的子模块，比如 podManager（pod 信息存储模块），probeManager（pod 测活模块）等等。</p>
 </li>
 </ul>
 <p>那么 kubelet 中各个子模块之间又是如何配合工作的呢？主要是基于生产者消费者的模型。</p>
-<p>整个 kubelet 的工作就是在围绕着不同的生产者生产出来的不同的消息来调用相应的消费者完成不同的行为。如下图所示</p>
+<p>整个 kubelet 的工作模式就是在围绕着不同的生产者生产出来的不同的有关 pod 的消息来调用相应的消费者（不同的子模块）完成不同的行为，比如创建 pod，删除 pod，如下图所示</p>
 <p><img src="kubelet_structure_0.png" alt=""></p>
-<h2 id="消息生产者，消费者简述"><a href="#消息生产者，消费者简述" class="headerlink" title="消息生产者，消费者简述"></a>消息生产者，消费者简述</h2><p>那么 kubelet 中主要包含哪几个消息的生产者呢？消费者又是怎么消费的呢？</p>
-<p>我们可以在 kubelet 的 syncLoopIteration 函数中看到 kubelet 到底同时接收哪几个信息源</p>
+<p>那么 kubelet 中主要包含哪几个消息的生产者呢？消费者又是怎么消费的呢？</p>
+<p>我们可以在 kubelet 的 <a href="https://github.com/kubernetes/kubernetes/blob/dd5e1a2978fd0b97d9b78e1564398aeea7e7fe92/pkg/kubelet/kubelet.go#L1839" target="_blank" rel="external">syncLoopIteration</a> 函数中看到 kubelet 到底同时接收哪几个信息源</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">// * configCh: dispatch the pods for the config change to the appropriate</div><div class="line">//             handler callback for the event type</div><div class="line">// * plegCh: update the runtime cache; sync pod</div><div class="line">// * syncCh: sync all pods waiting for sync</div><div class="line">// * houseKeepingCh: trigger cleanup of pods</div><div class="line">// * liveness manager: sync pods that have failed or in which one or more</div><div class="line">//                     containers have failed liveness checks</div><div class="line">func (kl *Kubelet) syncLoopIteration(...) &#123;</div><div class="line">	case u, open := &lt;-configCh:</div><div class="line">		...</div><div class="line">	case e := &lt;-plegCh:</div><div class="line">		...</div><div class="line">	case &lt;-syncCh:</div><div class="line">		...</div><div class="line">	case update := &lt;-kl.livenessManager.Updates():</div><div class="line">		...</div><div class="line">	case &lt;-housekeepingCh:</div><div class="line">		...</div><div class="line">&#125;</div></pre></td></tr></table></figure>
 <p>通过代码注释可以看出，kubelet 主要有 5 个不同的信息源</p>
 <ul>
-<li>configCh: 该信息源由 kubeDeps 对象中的 podConfig 子模块提供，该模块将同时 watch 3 个不同来源的 pod 信息的变化（file，http，apiserver），一旦某个来源的 pod 信息发生了更新，这个 channel 中就会出现被更新的 pod 信息和更新操作。</li>
-<li>plegCh: 该信息源由 kubelet 对象中的 pleg 子模块提供，该模块主要用于周期性地向 container runtime 查询当前所有容器的状态，如果状态发生变化，则这个 channel 产生事件。[1]</li>
-<li>syncCh: 该信息源是一个周期性的信号源(默认1秒)，周期性同步所有需要再次同步的 pod。？？？</li>
-<li>liveness manager update: 该信息源是由 kubelet 对象中 livenessManager 管理，当某个容器的 liveness probe 状态发生了变化，则会产生事件。</li>
+<li>configCh: 该信息源由 kubeDeps 对象中的 <a href="https://github.com/kubernetes/kubernetes/blob/dd5e1a2978fd0b97d9b78e1564398aeea7e7fe92/pkg/kubelet/kubelet.go#L266:34" target="_blank" rel="external">PodConfig</a> 子模块提供，该模块将同时 watch 3 个不同来源的 pod 信息的变化（file，http，apiserver），一旦某个来源的 pod 信息发生了更新（创建/更新/删除），这个 channel 中就会出现被更新的 pod 信息和更新的具体操作。</li>
+<li>plegCh: 该信息源由 kubelet 对象中的 <a href="https://github.com/kubernetes/kubernetes/blob/dd5e1a2978fd0b97d9b78e1564398aeea7e7fe92/pkg/kubelet/kubelet.go#L1081" target="_blank" rel="external">pleg</a> 子模块提供，该模块主要用于周期性地向 container runtime 查询当前所有容器的状态，如果状态发生变化，则这个 channel 产生事件。[1]</li>
+<li>syncCh: 该信息源是一个周期性的信号源(默认1秒)，周期性同步所有需要再次同步的 pod。</li>
+<li>liveness manager update: 该信息源是由 kubelet 对象中 <a href="https://github.com/kubernetes/kubernetes/blob/dd5e1a2978fd0b97d9b78e1564398aeea7e7fe92/pkg/kubelet/kubelet.go#L1002" target="_blank" rel="external">livenessManager</a>管理，当某个容器的 liveness probe 状态发生了变化，则会产生事件。</li>
 <li>housekeepingCh: 该信息源也是一个周期性信号源(默认2秒)，周期性的清理一些无用 pod。</li>
 </ul>
 <p>所有的这些消息源产生的消息都由 kubelet 对象统一接受，并且调用相应的功能函数来完成相应的操作。</p>
-<p>kubelet 对象自身提供了一系列处理不同对象的 handler 函数，并且暴露成 SyncHandler 接口，其中包含针对不同信息源里不同消息类型的处理函数</p>
+<p>kubelet 对象自身实现一系列处理不同事件的 handler 函数，并且汇总成 <a href="https://github.com/kubernetes/kubernetes/blob/dd5e1a2978fd0b97d9b78e1564398aeea7e7fe92/pkg/kubelet/kubelet.go#L170" target="_blank" rel="external">SyncHandler</a> 接口，其中包含针对不同信息源里不同消息类型的处理函数</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">type SyncHandler interface &#123;</div><div class="line">	HandlePodAdditions(pods []*v1.Pod)</div><div class="line">	HandlePodUpdates(pods []*v1.Pod)</div><div class="line">	HandlePodRemoves(pods []*v1.Pod)</div><div class="line">	HandlePodReconcile(pods []*v1.Pod)</div><div class="line">	HandlePodSyncs(pods []*v1.Pod)</div><div class="line">	HandlePodCleanups() error</div><div class="line">&#125;</div></pre></td></tr></table></figure>
 <p>当然，每一个处理函数背后可能都需要 kubelet 对象去调用背后多个内部子模块来共同完成，比如 HandlePodAddition 函数，处理 Pod 的创建，其中可能需要</p>
 <ul>
@@ -360,14 +365,13 @@
 <li>….</li>
 </ul>
 <p>所以综上，整个 kubelet 的所有内部子模块就是通过这种生产者消费者模型协调工作，及时将 Pod 以用户期望的状态维护在它所在的机器上。</p>
-<p>针对不同的消息来源的不同消息，我们将分别用单独的文章来介绍它实现的细节。</p>
-<h2 id="kubelet-节点状态的守护进程"><a href="#kubelet-节点状态的守护进程" class="headerlink" title="kubelet 节点状态的守护进程"></a>kubelet 节点状态的守护进程</h2><p>除了上一小节说到的生产者消费者框架，kubelet 中还包括一些子模块为了</p>
+<p>上面说到的只是 kubelet 中和 pod 管理相关的结构，kubelet 中还包括一些为了</p>
 <ul>
 <li>维护物理机稳定性</li>
 <li>同步更新物理机配置</li>
 </ul>
 <p>等目的，周期性不间断工作的子模块，他们也是 kubelet 中非常重要的一部分。</p>
-<p>针对这些子模块的工作模式，我们也将用单独的文章来具体介绍他们的实现细节。</p>
+<p>所以这篇文章作为一个综述，是一系列文章的开端，我将通过一系列博文来解析 kubelet 的内部结构的细节，针对 kubelet 每一个比较重要的子模块，子功能进行单独的介绍。</p>
 <h1 id="参考引用"><a href="#参考引用" class="headerlink" title="参考引用"></a>参考引用</h1><ol>
 <li><a href="https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node/pod-lifecycle-event-generator.md" target="_blank" rel="external">https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node/pod-lifecycle-event-generator.md</a></li>
 </ol>
@@ -451,7 +455,7 @@
                 <i class="fa fa-calendar-o"></i>
               </span>
               
-                <span class="post-meta-item-text">Posted on</span>
+                <span class="post-meta-item-text">Veröffentlicht am</span>
               
               <time title="Post created" itemprop="dateCreated datePublished" datetime="2017-02-08T10:12:56+08:00">
                 2017-02-08
@@ -575,7 +579,7 @@
             <div class="site-state-item site-state-posts">
               <a href="/archives">
                 <span class="site-state-item-count">2</span>
-                <span class="site-state-item-name">posts</span>
+                <span class="site-state-item-name">Artikel</span>
               </a>
             </div>
           
@@ -627,7 +631,7 @@
 
 
 <div class="powered-by">
-  Powered by <a class="theme-link" href="https://hexo.io">Hexo</a>
+  Erstellt mit  <a class="theme-link" href="https://hexo.io">Hexo</a>
 </div>
 
 <div class="theme-info">
