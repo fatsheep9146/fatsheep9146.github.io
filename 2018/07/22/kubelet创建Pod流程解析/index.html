@@ -87,12 +87,22 @@
 
 
 
-<meta property="og:type" content="website">
-<meta property="og:title" content="Hexo">
-<meta property="og:url" content="http://yoursite.com/index.html">
+<meta name="description" content="kubelet 创建 pod 流程解析简介这篇文章主要是针对 kubelet 对 pod 的生命周期管理逻辑中，有关 pod 的创建的过程的解析。
+就像我们在之前的文章中解释的那样，kubelet 整体是工作在生产者，消费者模型中的，所以当 一个 pod 创建的事件进入队列后，kubelet 就会及时收到这个事件，然后调用一系列相关的子模块，完成 pod 的创建工作。
+流程解析kubelet 针对">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kubelet创建Pod流程解析">
+<meta property="og:url" content="http://yoursite.com/2018/07/22/kubelet创建Pod流程解析/index.html">
 <meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="kubelet 创建 pod 流程解析简介这篇文章主要是针对 kubelet 对 pod 的生命周期管理逻辑中，有关 pod 的创建的过程的解析。
+就像我们在之前的文章中解释的那样，kubelet 整体是工作在生产者，消费者模型中的，所以当 一个 pod 创建的事件进入队列后，kubelet 就会及时收到这个事件，然后调用一系列相关的子模块，完成 pod 的创建工作。
+流程解析kubelet 针对">
+<meta property="og:updated_time" content="2018-07-22T07:08:14.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Hexo">
+<meta name="twitter:title" content="kubelet创建Pod流程解析">
+<meta name="twitter:description" content="kubelet 创建 pod 流程解析简介这篇文章主要是针对 kubelet 对 pod 的生命周期管理逻辑中，有关 pod 的创建的过程的解析。
+就像我们在之前的文章中解释的那样，kubelet 整体是工作在生产者，消费者模型中的，所以当 一个 pod 创建的事件进入队列后，kubelet 就会及时收到这个事件，然后调用一系列相关的子模块，完成 pod 的创建工作。
+流程解析kubelet 针对">
 
 
 
@@ -120,13 +130,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/"/>
+  <link rel="canonical" href="http://yoursite.com/2018/07/22/kubelet创建Pod流程解析/"/>
 
 
 
 
 
-  <title> Hexo </title>
+  <title> kubelet创建Pod流程解析 | Hexo </title>
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" lang="">
@@ -151,9 +161,7 @@
     
   
 
-  <div class="container one-collumn sidebar-position-left 
-   page-home 
- ">
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -234,9 +242,9 @@
         <div class="content-wrap">
           <div id="content" class="content">
             
-  <section id="posts" class="posts-expand">
+
+  <div id="posts" class="posts-expand">
     
-      
 
   
 
@@ -269,10 +277,7 @@
             
             
               
-                
-                <a class="post-title-link" href="/2018/07/22/kubelet创建Pod流程解析/" itemprop="url">
-                  kubelet创建Pod流程解析
-                </a>
+                kubelet创建Pod流程解析
               
             
           </h1>
@@ -323,9 +328,7 @@
       
 
       
-        
-          
-            <h1 id="kubelet-创建-pod-流程解析"><a href="#kubelet-创建-pod-流程解析" class="headerlink" title="kubelet 创建 pod 流程解析"></a>kubelet 创建 pod 流程解析</h1><h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p>这篇文章主要是针对 kubelet 对 pod 的生命周期管理逻辑中，有关 pod 的创建的过程的解析。</p>
+        <h1 id="kubelet-创建-pod-流程解析"><a href="#kubelet-创建-pod-流程解析" class="headerlink" title="kubelet 创建 pod 流程解析"></a>kubelet 创建 pod 流程解析</h1><h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p>这篇文章主要是针对 kubelet 对 pod 的生命周期管理逻辑中，有关 pod 的创建的过程的解析。</p>
 <p>就像我们在之前的文章中解释的那样，kubelet 整体是工作在生产者，消费者模型中的，所以当 一个 pod 创建的事件进入队列后，kubelet 就会及时收到这个事件，然后调用一系列相关的子模块，完成 pod 的创建工作。</p>
 <h1 id="流程解析"><a href="#流程解析" class="headerlink" title="流程解析"></a>流程解析</h1><p>kubelet 针对 Pod 创建实现了一个 Handler 函数，<a href="https://github.com/kubernetes/kubernetes/blob/dd5e1a2978fd0b97d9b78e1564398aeea7e7fe92/pkg/kubelet/kubelet.go#L1990" target="_blank" rel="external">HandlePodAdditions</a>，该函数中包含pod 在创建的过程中的所有操作。我们就依次来看一下所有设计到的操作：</p>
 <h3 id="Step-1-添加新创建的-Pod-到-podManager-子模块中"><a href="#Step-1-添加新创建的-Pod-到-podManager-子模块中" class="headerlink" title="Step 1: 添加新创建的 Pod 到 podManager 子模块中"></a>Step 1: 添加新创建的 Pod 到 podManager 子模块中</h3><p><a href="https://github.com/kubernetes/kubernetes/blob/dd5e1a2978fd0b97d9b78e1564398aeea7e7fe92/pkg/kubelet/kubelet.go#L954" target="_blank" rel="external">podManager</a> 子模块负责管理这台机器上的 pod 的信息，pod 和 mirrorPod 之间的对应关系等等。</p>
@@ -370,16 +373,20 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">func (m *kubeGenericRuntimeManager) SyncPod(pod *v1.Pod, _ v1.PodStatus, podStatus *kubecontainer.PodStatus, pullSecrets []v1.Secret, backOff *flowcontrol.Backoff) (result kubecontainer.PodSyncResult) &#123;</div><div class="line">	...</div><div class="line">	// 1. 创建 PodSandbox 容器</div><div class="line">	podSandboxID, msg, err = m.createPodSandbox(pod, podContainerChanges.Attempt)</div><div class="line">	...</div><div class="line">	</div><div class="line">	// 2. 启动 initContainer 容器</div><div class="line">	if msg, err := m.startContainer(podSandboxID, podSandboxConfig, container, pod, podStatus, pullSecrets, podIP); err != nil &#123;</div><div class="line"></div><div class="line">	...		</div><div class="line">	// 3. 启动业务容器</div><div class="line">	for _, idx := range podContainerChanges.ContainersToStart &#123;</div><div class="line">	...</div><div class="line">	if msg, err := m.startContainer(podSandboxID, podSandboxConfig, container, pod, podStatus, pullSecrets, podIP); err != nil &#123;</div><div class="line">	...</div><div class="line">&#125;</div></pre></td></tr></table></figure>
 <p>当所有一切动作都完成之后，一个完整的 Pod 就已经创建起来了！</p>
 
-          
+      
+    </div>
+
+    <div>
+      
         
+
       
     </div>
 
     <div>
       
-    </div>
+        
 
-    <div>
       
     </div>
 
@@ -388,191 +395,38 @@
       
 
       
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-  <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/07/08/kubelet内部实现解析/">
-
-  <span style="display:none" itemprop="author" itemscope itemtype="http://schema.org/Person">
-    <meta itemprop="name" content="John Doe">
-    <meta itemprop="description" content="">
-    <meta itemprop="image" content="/images/avatar.gif">
-  </span>
-
-  <span style="display:none" itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-    <meta itemprop="name" content="Hexo">
-    <span style="display:none" itemprop="logo" itemscope itemtype="http://schema.org/ImageObject">
-      <img style="display:none;" itemprop="url image" alt="Hexo" src="">
-    </span>
-  </span>
-
-    
-      <header class="post-header">
-
         
-        
-          <h1 class="post-title" itemprop="name headline">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
             
+              <a href="/2018/07/08/kubelet内部实现解析/" rel="next" title="kubelet内部实现解析">
+                <i class="fa fa-chevron-left"></i> kubelet内部实现解析
+              </a>
             
-              
-                
-                <a class="post-title-link" href="/2018/07/08/kubelet内部实现解析/" itemprop="url">
-                  kubelet内部实现解析
-                </a>
-              
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
             
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">Posted on</span>
-              
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-07-08T20:09:49+08:00">
-                2018-07-08
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
+          </div>
         </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
       
 
       
-        
-          
-            <h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p>kubelet 组件作为每台 kubernetes 集群中每台计算节点上运行的 agent，主要职责有两个</p>
-<ul>
-<li>管理这台机器上面的 pod 的生命周期，</li>
-<li>自动上报，并且维护这台计算节点的状态</li>
-</ul>
-<p>这篇文章的目的就在于对 kubelet 整体的设计框架进行分析。并不会对任意一个子功能的细节进行深入的介绍。后续会有一系列文章对 kubelet 组件的各种功能进行详细的介绍。</p>
-<h1 id="kubelet-内部结构"><a href="#kubelet-内部结构" class="headerlink" title="kubelet 内部结构"></a>kubelet 内部结构</h1><p>kubelet 内部其实是由多个【子模块】来构成的，每个子模块都单独负责一部分的任务，而在代码中，所有的子模块对象都包含在下面两个对象中，这两个对象也是 kubelet 中最重要的两个对象</p>
-<ul>
-<li><p>kubeDeps：该对象（类型为 <a href="https://github.com/kubernetes/kubernetes/blob/dd5e1a2978fd0b97d9b78e1564398aeea7e7fe92/pkg/kubelet/kubelet.go#L229" target="_blank" rel="external">Dependencies</a>）主要包含一些 kubelet 依赖的外部功能，比如 cadvisor（监控功能），containerManager（cgroup 管理功能）。</p>
-</li>
-<li><p>kubelet：kubelet 对象（类型为 <a href="https://github.com/kubernetes/kubernetes/blob/dd5e1a2978fd0b97d9b78e1564398aeea7e7fe92/pkg/kubelet/kubelet.go#L931" target="_blank" rel="external">Kubelet</a>）则代表 kubelet 内部跟 pod 息息相关的子模块，比如 podManager（pod 信息存储模块），probeManager（pod 测活模块）等等。</p>
-</li>
-</ul>
-<p>那么 kubelet 中各个子模块之间又是如何配合工作的呢？主要是基于生产者消费者的模型。</p>
-<p>整个 kubelet 的工作模式就是在围绕着不同的生产者生产出来的不同的有关 pod 的消息来调用相应的消费者（不同的子模块）完成不同的行为，比如创建 pod，删除 pod，如下图所示</p>
-<p><img src="kubelet_structure_0.png" alt=""></p>
-<p>那么 kubelet 中主要包含哪几个消息的生产者呢？消费者又是怎么消费的呢？</p>
-<p>我们可以在 kubelet 的 <a href="https://github.com/kubernetes/kubernetes/blob/dd5e1a2978fd0b97d9b78e1564398aeea7e7fe92/pkg/kubelet/kubelet.go#L1839" target="_blank" rel="external">syncLoopIteration</a> 函数中看到 kubelet 到底同时接收哪几个信息源</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">// * configCh: dispatch the pods for the config change to the appropriate</div><div class="line">//             handler callback for the event type</div><div class="line">// * plegCh: update the runtime cache; sync pod</div><div class="line">// * syncCh: sync all pods waiting for sync</div><div class="line">// * houseKeepingCh: trigger cleanup of pods</div><div class="line">// * liveness manager: sync pods that have failed or in which one or more</div><div class="line">//                     containers have failed liveness checks</div><div class="line">func (kl *Kubelet) syncLoopIteration(...) &#123;</div><div class="line">	case u, open := &lt;-configCh:</div><div class="line">		...</div><div class="line">	case e := &lt;-plegCh:</div><div class="line">		...</div><div class="line">	case &lt;-syncCh:</div><div class="line">		...</div><div class="line">	case update := &lt;-kl.livenessManager.Updates():</div><div class="line">		...</div><div class="line">	case &lt;-housekeepingCh:</div><div class="line">		...</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>通过代码注释可以看出，kubelet 主要有 5 个不同的信息源</p>
-<ul>
-<li>configCh: 该信息源由 kubeDeps 对象中的 <a href="https://github.com/kubernetes/kubernetes/blob/dd5e1a2978fd0b97d9b78e1564398aeea7e7fe92/pkg/kubelet/kubelet.go#L266:34" target="_blank" rel="external">PodConfig</a> 子模块提供，该模块将同时 watch 3 个不同来源的 pod 信息的变化（file，http，apiserver），一旦某个来源的 pod 信息发生了更新（创建/更新/删除），这个 channel 中就会出现被更新的 pod 信息和更新的具体操作。</li>
-<li>plegCh: 该信息源由 kubelet 对象中的 <a href="https://github.com/kubernetes/kubernetes/blob/dd5e1a2978fd0b97d9b78e1564398aeea7e7fe92/pkg/kubelet/kubelet.go#L1081" target="_blank" rel="external">pleg</a> 子模块提供，该模块主要用于周期性地向 container runtime 查询当前所有容器的状态，如果状态发生变化，则这个 channel 产生事件。[1]</li>
-<li>syncCh: 该信息源是一个周期性的信号源(默认1秒)，周期性同步所有需要再次同步的 pod。</li>
-<li>liveness manager update: 该信息源是由 kubelet 对象中 <a href="https://github.com/kubernetes/kubernetes/blob/dd5e1a2978fd0b97d9b78e1564398aeea7e7fe92/pkg/kubelet/kubelet.go#L1002" target="_blank" rel="external">livenessManager</a>管理，当某个容器的 liveness probe 状态发生了变化，则会产生事件。</li>
-<li>housekeepingCh: 该信息源也是一个周期性信号源(默认2秒)，周期性的清理一些无用 pod。</li>
-</ul>
-<p>所有的这些消息源产生的消息都由 kubelet 对象统一接受，并且调用相应的功能函数来完成相应的操作。</p>
-<p>kubelet 对象自身实现一系列处理不同事件的 handler 函数，并且汇总成 <a href="https://github.com/kubernetes/kubernetes/blob/dd5e1a2978fd0b97d9b78e1564398aeea7e7fe92/pkg/kubelet/kubelet.go#L170" target="_blank" rel="external">SyncHandler</a> 接口，其中包含针对不同信息源里不同消息类型的处理函数</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">type SyncHandler interface &#123;</div><div class="line">	HandlePodAdditions(pods []*v1.Pod)</div><div class="line">	HandlePodUpdates(pods []*v1.Pod)</div><div class="line">	HandlePodRemoves(pods []*v1.Pod)</div><div class="line">	HandlePodReconcile(pods []*v1.Pod)</div><div class="line">	HandlePodSyncs(pods []*v1.Pod)</div><div class="line">	HandlePodCleanups() error</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>当然，每一个处理函数背后可能都需要 kubelet 对象去调用背后多个内部子模块来共同完成，比如 HandlePodAddition 函数，处理 Pod 的创建，其中可能需要</p>
-<ul>
-<li>调用 kubelet.podManager 子模块 AddPod 函数，注册该 pod 信息</li>
-<li>调用 kubelet.podWorker 子模块为这个 Pod 创建单独的 worker goroutine 完成具体的操作</li>
-<li>调用 kubelet.containerManager 子模块为这个 Pod 创建相应的 Pod Level Cgroup </li>
-<li>调用 kubelet.volumeManager 子模块为这个 Pod 准备需要被 Mount 到容器中的文件系统</li>
-<li>调用 kubelet.containerRuntime 子模块真正的创建 Pod 的实体</li>
-<li>….</li>
-</ul>
-<p>所以综上，整个 kubelet 的所有内部子模块就是通过这种生产者消费者模型协调工作，及时将 Pod 以用户期望的状态维护在它所在的机器上。</p>
-<p>上面说到的只是 kubelet 中和 pod 管理相关的结构，kubelet 中还包括一些为了</p>
-<ul>
-<li>维护物理机稳定性</li>
-<li>同步更新物理机配置</li>
-</ul>
-<p>等目的，周期性不间断工作的子模块，他们也是 kubelet 中非常重要的一部分。</p>
-<p>所以这篇文章作为一个综述，是一系列文章的开端，我将通过一系列博文来解析 kubelet 的内部结构的细节，针对 kubelet 每一个比较重要的子模块，子功能进行单独的介绍。</p>
-<h1 id="参考引用"><a href="#参考引用" class="headerlink" title="参考引用"></a>参考引用</h1><ol>
-<li><a href="https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node/pod-lifecycle-event-generator.md" target="_blank" rel="external">https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node/pod-lifecycle-event-generator.md</a></li>
-</ol>
-
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
       
     </footer>
   </article>
 
 
-    
-  </section>
 
-  
+    <div class="post-spread">
+      
+    </div>
+  </div>
 
           
           </div>
@@ -580,6 +434,10 @@
 
 
           
+  <div class="comments" id="comments">
+    
+  </div>
+
 
         </div>
         
@@ -599,8 +457,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
 
-      <section class="site-overview sidebar-panel sidebar-panel-active">
+      <section class="site-overview sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
           <img class="site-author-image" itemprop="image"
                src="/images/avatar.gif"
@@ -642,6 +509,22 @@
 
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#kubelet-创建-pod-流程解析"><span class="nav-number">1.</span> <span class="nav-text">kubelet 创建 pod 流程解析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#简介"><span class="nav-number">2.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#流程解析"><span class="nav-number">3.</span> <span class="nav-text">流程解析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Step-1-添加新创建的-Pod-到-podManager-子模块中"><span class="nav-number">3.0.1.</span> <span class="nav-text">Step 1: 添加新创建的 Pod 到 podManager 子模块中</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Step-2-将创建-Pod-的工作下发给-podWorkers-子模块"><span class="nav-number">3.0.2.</span> <span class="nav-text">Step 2: 将创建 Pod 的工作下发给 podWorkers 子模块</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Step-3-podWorkers-子模块为该-Pod-启动一个处理对-Pod-的更新事件的-goroutine"><span class="nav-number">3.0.3.</span> <span class="nav-text">Step 3: podWorkers 子模块为该 Pod 启动一个处理对 Pod 的更新事件的 goroutine</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Step-4-处理-pod-更新事件的-goroutine-开始操作"><span class="nav-number">3.0.4.</span> <span class="nav-text">Step 4: 处理 pod 更新事件的 goroutine 开始操作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Step-5-创建-Pod-实体"><span class="nav-number">3.0.5.</span> <span class="nav-text">Step 5: 创建 Pod 实体</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
     </div>
@@ -741,6 +624,10 @@
   
 
   
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
 
   
 
