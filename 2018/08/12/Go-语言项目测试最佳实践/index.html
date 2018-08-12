@@ -1,0 +1,691 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="default">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="自动化测试对于一个产品的快速迭代是非常关键的一环，这篇文章主要关注的就是有关自动化测试方面的一些最佳实践，已经在 Go 语言项目中有关测试代码上的一些具体的最佳实践。
+测试包含哪几种常见的测试类型主要包括
+
+单元测试
+集成测试
+E2E 测试
+
+几种，不同的测试具备不同的特质，也适用于不同的目的。
+首先，「单元测试」根据定义指的是针对代码中的某个独立单元，（比如一个类，一个方法）的测试方法。可见这种">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Go 语言项目测试最佳实践">
+<meta property="og:url" content="http://fatsheep9146.github.io/2018/08/12/Go-语言项目测试最佳实践/index.html">
+<meta property="og:site_name" content="一只肥羊的思考">
+<meta property="og:description" content="自动化测试对于一个产品的快速迭代是非常关键的一环，这篇文章主要关注的就是有关自动化测试方面的一些最佳实践，已经在 Go 语言项目中有关测试代码上的一些具体的最佳实践。
+测试包含哪几种常见的测试类型主要包括
+
+单元测试
+集成测试
+E2E 测试
+
+几种，不同的测试具备不同的特质，也适用于不同的目的。
+首先，「单元测试」根据定义指的是针对代码中的某个独立单元，（比如一个类，一个方法）的测试方法。可见这种">
+<meta property="og:updated_time" content="2018-08-12T13:29:47.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Go 语言项目测试最佳实践">
+<meta name="twitter:description" content="自动化测试对于一个产品的快速迭代是非常关键的一环，这篇文章主要关注的就是有关自动化测试方面的一些最佳实践，已经在 Go 语言项目中有关测试代码上的一些具体的最佳实践。
+测试包含哪几种常见的测试类型主要包括
+
+单元测试
+集成测试
+E2E 测试
+
+几种，不同的测试具备不同的特质，也适用于不同的目的。
+首先，「单元测试」根据定义指的是针对代码中的某个独立单元，（比如一个类，一个方法）的测试方法。可见这种">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://fatsheep9146.github.io/2018/08/12/Go-语言项目测试最佳实践/"/>
+
+
+
+
+
+  <title> Go 语言项目测试最佳实践 | 一只肥羊的思考 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">一只肥羊的思考</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+    
+      <p class="site-subtitle"></p>
+    
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+  <link itemprop="mainEntityOfPage" href="http://fatsheep9146.github.io/2018/08/12/Go-语言项目测试最佳实践/">
+
+  <span style="display:none" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <meta itemprop="name" content="Ziqi Zhao (fatsheep9146)">
+    <meta itemprop="description" content="">
+    <meta itemprop="image" content="/images/avatar.gif">
+  </span>
+
+  <span style="display:none" itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+    <meta itemprop="name" content="一只肥羊的思考">
+    <span style="display:none" itemprop="logo" itemscope itemtype="http://schema.org/ImageObject">
+      <img style="display:none;" itemprop="url image" alt="一只肥羊的思考" src="">
+    </span>
+  </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Go 语言项目测试最佳实践
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-08-12T21:29:09+08:00">
+                2018-08-12
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>自动化测试对于一个产品的快速迭代是非常关键的一环，这篇文章主要关注的就是有关自动化测试方面的一些最佳实践，已经在 Go 语言项目中有关测试代码上的一些具体的最佳实践。</p>
+<h1 id="测试包含哪几种"><a href="#测试包含哪几种" class="headerlink" title="测试包含哪几种"></a>测试包含哪几种</h1><p>常见的测试类型主要包括</p>
+<ul>
+<li>单元测试</li>
+<li>集成测试</li>
+<li>E2E 测试</li>
+</ul>
+<p>几种，不同的测试具备不同的特质，也适用于不同的目的。</p>
+<p>首先，「单元测试」根据定义指的是针对代码中的某个独立单元，（比如一个类，一个方法）的测试方法。可见这种测试的优势就在于</p>
+<ul>
+<li>编写简单</li>
+<li>定位错误精准</li>
+</ul>
+<p>但是缺陷也显而易见</p>
+<ul>
+<li>测试范围有限</li>
+</ul>
+<p>再看「集成测试」，集成测试要比单元测试的范围更大一点，一般涉及到多个模块之间的配合测试，自然而然，他的编写难度也要比单元测试难一些。但是他可以很好的快速发现多个模块单独测试没有问题，但是一起协同工作出现问题的场景。</p>
+<p>另外 kubernetes 社区对于集成测试的约束也很有意思，他认为集成测试还应该满足所有测试需要的服务都应该在一台机器上启动。</p>
+<p>最后「E2E 测试」，E2E 测试则更多的是模拟用户的行为对整个产品进行整体测试，比如开发一款 app，E2E 测试可能会模拟一个用户，注册，登录，点击产品等等一系列行为。所以这种测试方法的优势在于</p>
+<ul>
+<li>快速确认产品是否存在 bug，并且 bug 是真实用户会感知的</li>
+</ul>
+<p>虽然能够确认有 bug ，但是由于 bug 可能是 E2E 测试中涉及到的多个组件中的任何一个，所以它的缺陷也很明显</p>
+<ul>
+<li>无法快速定位问题代码</li>
+<li>编写难度也是最大的</li>
+</ul>
+<p>所以也正是基于上述不同测试的优缺点，<a href="https://testing.googleblog.com/2015/04/just-say-no-to-more-end-to-end-tests.html" target="_blank" rel="external">Google</a> 也总结出针对这几种测试的比例的最佳实践。</p>
+<blockquote>
+<p>As a good first guess, Google often suggests a 70/20/10 split: 70% unit tests, 20% integration tests, and 10% end-to-end tests.</p>
+</blockquote>
+<p>也就是说一个稳定的项目，它的单元测试，集成测试，E2E 测试的数量应该以 7:2:1 的比例分布，形成一个金字塔的形状，塔底是大量的单元测试，塔顶是少量的 E2E 测试。</p>
+<p>下面我们也将通过单独的博文分别介绍，单元测试，集成测试，E2E 测试各自的最佳实践。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/08/12/kubelet-的-Pod-信息源/" rel="next" title="kubelet 的 Pod 信息源">
+                <i class="fa fa-chevron-left"></i> kubelet 的 Pod 信息源
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="Ziqi Zhao (fatsheep9146)" />
+          <p class="site-author-name" itemprop="name">Ziqi Zhao (fatsheep9146)</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+        
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">posts</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#测试包含哪几种"><span class="nav-number">1.</span> <span class="nav-text">测试包含哪几种</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ziqi Zhao (fatsheep9146)</span>
+</div>
+
+
+<div class="powered-by">
+  Powered by <a class="theme-link" href="https://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+</body>
+</html>
