@@ -1,0 +1,676 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="default">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="Go 语言项目中，单元测试是必不可少的，就像我们在这篇博文中介绍的那样，单元测试占所有测试代码的 70% 的比重才算合理，可见单元测试的重要性。
+这篇博文中，主要记录了一些常见的 Go 语言单元测试的最佳实践，当然这是一个可能后续会不断丰富完善的文档。
+Table Driven Testtable driven test [1][2] 是很多 Go 语言开发者所推崇的测试代码编写方式，Go 语言标">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Go 项目单元测试最佳实践">
+<meta property="og:url" content="http://fatsheep9146.github.io/2018/08/19/Go-项目单元测试最佳实践/index.html">
+<meta property="og:site_name" content="一只肥羊的思考">
+<meta property="og:description" content="Go 语言项目中，单元测试是必不可少的，就像我们在这篇博文中介绍的那样，单元测试占所有测试代码的 70% 的比重才算合理，可见单元测试的重要性。
+这篇博文中，主要记录了一些常见的 Go 语言单元测试的最佳实践，当然这是一个可能后续会不断丰富完善的文档。
+Table Driven Testtable driven test [1][2] 是很多 Go 语言开发者所推崇的测试代码编写方式，Go 语言标">
+<meta property="og:updated_time" content="2018-08-19T05:26:39.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Go 项目单元测试最佳实践">
+<meta name="twitter:description" content="Go 语言项目中，单元测试是必不可少的，就像我们在这篇博文中介绍的那样，单元测试占所有测试代码的 70% 的比重才算合理，可见单元测试的重要性。
+这篇博文中，主要记录了一些常见的 Go 语言单元测试的最佳实践，当然这是一个可能后续会不断丰富完善的文档。
+Table Driven Testtable driven test [1][2] 是很多 Go 语言开发者所推崇的测试代码编写方式，Go 语言标">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://fatsheep9146.github.io/2018/08/19/Go-项目单元测试最佳实践/"/>
+
+
+
+
+
+  <title> Go 项目单元测试最佳实践 | 一只肥羊的思考 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">一只肥羊的思考</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+    
+      <p class="site-subtitle"></p>
+    
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+  <link itemprop="mainEntityOfPage" href="http://fatsheep9146.github.io/2018/08/19/Go-项目单元测试最佳实践/">
+
+  <span style="display:none" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <meta itemprop="name" content="Ziqi Zhao (fatsheep9146)">
+    <meta itemprop="description" content="">
+    <meta itemprop="image" content="/images/avatar.gif">
+  </span>
+
+  <span style="display:none" itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+    <meta itemprop="name" content="一只肥羊的思考">
+    <span style="display:none" itemprop="logo" itemscope itemtype="http://schema.org/ImageObject">
+      <img style="display:none;" itemprop="url image" alt="一只肥羊的思考" src="">
+    </span>
+  </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Go 项目单元测试最佳实践
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-08-19T13:26:05+08:00">
+                2018-08-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Go 语言项目中，单元测试是必不可少的，就像我们在这篇博文中介绍的那样，单元测试占所有测试代码的 70% 的比重才算合理，可见单元测试的重要性。</p>
+<p>这篇博文中，主要记录了一些常见的 Go 语言单元测试的最佳实践，当然这是一个可能后续会不断丰富完善的文档。</p>
+<h2 id="Table-Driven-Test"><a href="#Table-Driven-Test" class="headerlink" title="Table Driven Test"></a>Table Driven Test</h2><p>table driven test [1][2] 是很多 Go 语言开发者所推崇的测试代码编写方式，Go 语言标准库的测试也是通过这个结构来撰写的，比如 <a href="https://golang.org/src/time/time_test.go" target="_blank" rel="external">time</a> 库的测试。</p>
+<p>整体来讲，table driven test 的基本结构如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">var testcases = []struct &#123;</div><div class="line">	in  string</div><div class="line">	out string</div><div class="line">&#125;&#123;</div><div class="line">	&#123;&quot;in1&quot;, &quot;out1&quot;&#125;,</div><div class="line">	&#123;&quot;in2&quot;, &quot;out2&quot;&#125;,</div><div class="line">&#125;</div><div class="line"></div><div class="line">func TestAFunc(t *testing.T) &#123;</div><div class="line">	for _, tt := range testcases &#123;</div><div class="line">		s := A(tt.in)</div><div class="line">		if s != tt.out &#123;</div><div class="line">			t.Errorf(&quot;got %q, want %q&quot;, s, tt.out)</div><div class="line">		&#125;</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>其中可见我们通过匿名结构体构建了每一个测试用例的结构，一个输入 in 和一个我们期望的输出 out，然后在真实的测试函数中，通过 range 轮询每一个测试用例，并且调用测试函数，比较输出结果，如果输出结果不等于我们期望的结果，即报错。</p>
+<p>这种测试框架最好的一点在于，结构清晰，并且添加新的测试 case 会非常方便，所以也是最为推荐的一种测试的编写方式。</p>
+<h2 id="Test-Fixtures-Golden-Files"><a href="#Test-Fixtures-Golden-Files" class="headerlink" title="Test Fixtures, Golden Files"></a>Test Fixtures, Golden Files</h2><p>在某些场景下，我们的测试可能需要一些除了测试源码以外的额外的文件，比如我们在测试对 json 文件的解码功能时，就需要一些示例的 json 文件作为测试 case 的输入。</p>
+<p>像这种场景，把这些测试过程中用到的辅助文件，通常就叫做 test fixtures[3][4][5]。而放置这些文件最佳的路径，就是测试代码所在路径的一个名字为 testdata 的子目录下面，原因有二</p>
+<ul>
+<li>测试代码运行时，他的 working dir 就是测试代码的当前路径</li>
+<li>go 语言在编译时会忽略名字叫做 testdata 的子目录</li>
+</ul>
+<p>所以二者结合，我们应该把这些文件放在这样的路径下</p>
+<p>而 Golden Files 又是什么呢？Golden Files 其实就是 test fixtures 中的一种，当测试用例的输出结果比较简单的时候，我们还可以把输出结果写在测试代码中 。但是当输出结果比较复杂时，直接写入代码已经不太合适了。所以此时，我们通常会把正确结果写入到文件里面，并且测试代码运行时，需要读取这个文件的内容进行比较。</p>
+<p>一般 Golden File 的使用都会配合 Table Driven Test，每一个测试 case 的 Golden File 的名字一般就会以“这个 case 的名字+.golden” 来命名，这样在编写代码时也会比较简单。</p>
+<p>标准库就包含这种使用方法的很多实例，比如对 gofmt 的测试 case：<a href="https://golang.org/src/cmd/gofmt/gofmt_test.go" target="_blank" rel="external">https://golang.org/src/cmd/gofmt/gofmt_test.go</a></p>
+<h2 id="test-包"><a href="#test-包" class="headerlink" title="*_test 包"></a>*_test 包</h2><p>单元测试文件一般被放置在待测试文件的同级目录下，而且文件名称基本和待测试文件名称加上”_test.go” 的规则来进行命名。</p>
+<p>那么单测代码应该放在那个 package 中呢？一般没有特殊的需求的话，单元测试应该仅仅关注待测试的 package 的 exported 方法的测试。因为这些 exported 方法是这个 package 对外进行交互的唯一接口，所以必须要保证它的一致性。</p>
+<p>所以一般也会将测试代码放置到另一个 package 中，假设待测试的 package 名称叫做 fmt，那么它的单测代码一般所在的包名为 fmt_test。</p>
+<p>但是如果你真的需要对一些逻辑比较复杂的非 exported 函数进行测试的话，测试代码一定必须要和待测试的 package 在同一个 package 中。所以此时的最佳实践一般是再构建一个文件，名称为 <package>_internal_test.go。此时这些测试代码的 package 是和这个package 位于同一个 package 中。</package></p>
+<p>所以一个完整的测试代码目录结构应该如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">-- gofmt</div><div class="line">   |-- gofmt.go (package gofmt)</div><div class="line">   |-- gofmt_internal_test.go (package gofmt)</div><div class="line">   |-- gofmt_test.go (package gofmt_test)</div></pre></td></tr></table></figure>
+<h2 id="TBD"><a href="#TBD" class="headerlink" title="TBD"></a>TBD</h2><ul>
+<li>Mock 技术</li>
+<li>Http Server 测试</li>
+<li>并发测试</li>
+</ul>
+<h1 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h1><ol>
+<li><a href="https://dave.cheney.net/2013/06/09/writing-table-driven-tests-in-go" target="_blank" rel="external">https://dave.cheney.net/2013/06/09/writing-table-driven-tests-in-go</a></li>
+<li><a href="https://github.com/golang/go/wiki/TableDrivenTests" target="_blank" rel="external">https://github.com/golang/go/wiki/TableDrivenTests</a></li>
+<li><a href="https://speakerdeck.com/mitchellh/advanced-testing-with-go?slide=22" target="_blank" rel="external">https://speakerdeck.com/mitchellh/advanced-testing-with-go?slide=22</a></li>
+<li><a href="https://medium.com/soon-london/testing-with-golden-files-in-go-7fccc71c43d3" target="_blank" rel="external">https://medium.com/soon-london/testing-with-golden-files-in-go-7fccc71c43d3</a></li>
+<li><a href="https://dave.cheney.net/2016/05/10/test-fixtures-in-go" target="_blank" rel="external">https://dave.cheney.net/2016/05/10/test-fixtures-in-go</a></li>
+<li><a href="https://medium.com/@benbjohnson/structuring-tests-in-go-46ddee7a25c" target="_blank" rel="external">https://medium.com/@benbjohnson/structuring-tests-in-go-46ddee7a25c</a></li>
+<li><a href="https://talks.golang.org/2014/testing.slide#15" target="_blank" rel="external">https://talks.golang.org/2014/testing.slide#15</a></li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/08/12/Go-语言项目测试最佳实践/" rel="next" title="Go 语言项目测试最佳实践">
+                <i class="fa fa-chevron-left"></i> Go 语言项目测试最佳实践
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="Ziqi Zhao (fatsheep9146)" />
+          <p class="site-author-name" itemprop="name">Ziqi Zhao (fatsheep9146)</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+        
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">posts</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Table-Driven-Test"><span class="nav-number">1.</span> <span class="nav-text">Table Driven Test</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Test-Fixtures-Golden-Files"><span class="nav-number">2.</span> <span class="nav-text">Test Fixtures, Golden Files</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#test-包"><span class="nav-number">3.</span> <span class="nav-text">*_test 包</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TBD"><span class="nav-number">4.</span> <span class="nav-text">TBD</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Reference"><span class="nav-number"></span> <span class="nav-text">Reference</span></a></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Ziqi Zhao (fatsheep9146)</span>
+</div>
+
+
+<div class="powered-by">
+  Powered by <a class="theme-link" href="https://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+</body>
+</html>
