@@ -245,6 +245,213 @@
   
 
   <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+  <link itemprop="mainEntityOfPage" href="http://fatsheep9146.github.io/2018/08/26/kubernetes-volume-管理/">
+
+  <span style="display:none" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <meta itemprop="name" content="Ziqi Zhao (fatsheep9146)">
+    <meta itemprop="description" content="">
+    <meta itemprop="image" content="/images/avatar.gif">
+  </span>
+
+  <span style="display:none" itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+    <meta itemprop="name" content="一只肥羊的思考">
+    <span style="display:none" itemprop="logo" itemscope itemtype="http://schema.org/ImageObject">
+      <img style="display:none;" itemprop="url image" alt="一只肥羊的思考" src="">
+    </span>
+  </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2018/08/26/kubernetes-volume-管理/" itemprop="url">
+                  kubernetes volume 管理
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-08-26T21:29:01+08:00">
+                2018-08-26
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="什么是-Volume-特性"><a href="#什么是-Volume-特性" class="headerlink" title="什么是 Volume 特性"></a>什么是 Volume 特性</h1><p>在 kubernetes 中，数据存储是一个非常关键的问题。用户的某些类型的服务经常会有对数据存储方面的一些需求，比如：</p>
+<ul>
+<li>数据需要在容器重启之后，甚至 pod 被删除后，仍旧被保留</li>
+<li>有些数据需要在同一个 pod 之间进行共享</li>
+</ul>
+<p>此时就需要用到 kubernetes 的 volume 特性[1]了。</p>
+<p>而 kubernetes 中的 volume 特性使用起来也是非常简单的，我们只需要在 pod template spec 中指定我们希望使用的 volume，以及这个 volume 希望被这个 pod 中的每一个 container 以什么样子的方式来使用就好了。</p>
+<p>举个栗子</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div></pre></td><td class="code"><pre><div class="line">apiVersion: v1</div><div class="line">kind: Pod</div><div class="line">metadata:</div><div class="line">  name: test-volume</div><div class="line">spec:</div><div class="line">  containers:</div><div class="line">    - name: test-container1</div><div class="line">      image: busybox</div><div class="line">      volumeMounts:</div><div class="line">        - name: config-vol</div><div class="line">          mountPath: /etc/config</div><div class="line">    - name: test-container2</div><div class="line">      image: busybox</div><div class="line">      volumeMounts:</div><div class="line">        - name: config-vol</div><div class="line">          mountPath: /mnt/config</div><div class="line">        - name: data</div><div class="line">          mountPath: /data</div><div class="line">  volumes:</div><div class="line">    - name: config-vol</div><div class="line">      configMap:</div><div class="line">        name: log-config</div><div class="line">    - name: data</div><div class="line">      persistentVolumeClaim:</div><div class="line">        claimName: test-pvc</div></pre></td></tr></table></figure>
+<p>上面的这个 pod 其实就使用了两个 volume，分别叫做</p>
+<ul>
+<li>config-vol</li>
+<li>data</li>
+</ul>
+<p>而这两个 volume 分别是用不同的方式提供的</p>
+<ul>
+<li>config-vol 的数据是由一个叫做 log-config 的 configmap 来提供的</li>
+<li>data 的数据则是由一个叫做 test-pvc 的 persistentVolumeClaim 对象来提供的</li>
+</ul>
+<p>而这个 pod 中的两个 container 在使用两个 volume 时的使用姿势也是有差别的</p>
+<ul>
+<li>test-container1 仅仅使用了 config-vol 这个 volume，并且挂载到了自己的 /etc/config 路径下面</li>
+<li>test-container2 也使用了 config-vol 这个 volume，但是它挂载到了自己的 /mnt/config 路径下面；另外它也是用了 data 这个 volume，并且挂载到了 /data 目录下面。</li>
+</ul>
+<p>所以总结来看 kubernetes 中的 volume 是为了满足 pod 的各种数据存储需求所提供的特性。</p>
+<ul>
+<li>每一个 pod 使用的 volume 背后可能由不同的存储方式来提供的，比如 configmap，emptyDir，persistentVolumeClaim 等等</li>
+<li>pod 中的每一个 container 都可以用自己的方式来使用这个 pod 中的任意一个 volume</li>
+</ul>
+<p>而至于这个 volume 中的数据的生命周期，则跟 volume 背后是由哪种存储方式提供强相关。</p>
+<ul>
+<li>但是可以保证一点的是，无论采用哪种存储方式提供，volume 机制都能够保证在 container 发生重启的时候数据不会丢失。</li>
+</ul>
+<h1 id="常见的-Volume-类型"><a href="#常见的-Volume-类型" class="headerlink" title="常见的 Volume 类型"></a>常见的 Volume 类型</h1><p>在上一节中我们有一个非常重要的结论：</p>
+<ul>
+<li>volume 中的数据的生命周期，则跟 volume 背后是由哪种存储方式提供强相关。</li>
+</ul>
+<p>所以根据我们的业务场景的中对数据的持久性，读写性能等等的不同需求，我们也需要选择不同的 Volume 类型来满足</p>
+<p>比如我们平时比较常见的 Volume 类型包括</p>
+<ul>
+<li>configmap：常用于为业务提供启动配置文件，这种小文件读取的需求；特点是只读，并且生命周期独立于 pod，即 pod 消失 configmap 仍旧存在</li>
+<li>emptyDir：常用于同一个 pod 中的多个 container 进行少量文件的数据共享；特点是可读写，但是读写性能有限（取决于 kubelet 业务数据盘背后采用什么存储），并且没有 quota 限制，生命周期和 pod 完全一致，pod 被销毁，emptyDir 也会被删除</li>
+<li>hostPath: 常用于 pod 希望访问主机上的某一个路径的场景，特点是可读写，生命周期独立于 pod</li>
+<li>cephfs/nfs/rbd: 常用于 pod 希望使用网络存储来对数据进行持久化的场景</li>
+<li>persistentVolumeClaim[2]：最新的一种让 pod 申请 volume 存储的形式，pod 可以通过创建一个 persistentVolumeClaim 对象来指明自己对这块 volume 存储的需求，比如大小，存储类型（比如 nfs，ceph rbd），生命周期完全独立于 pod。</li>
+</ul>
+<h1 id="PersistentVolumeClaim-机制"><a href="#PersistentVolumeClaim-机制" class="headerlink" title="PersistentVolumeClaim 机制"></a>PersistentVolumeClaim 机制</h1><p>在上小节我们提到的 volume 的类型很丰富，包括 nfs，ceph rbd，cephfs，awsElasticBlockStore 等等，这些类型在 persistentVolumeClaim 概念出现之前是可以直接在 pod volume 字段中直接写明对这种 volume 的需求的，比如 cephfs，如果不采用 persistentVolumeClaim 机制的话，你需要在 volume 的字段中显式的写入跟这个 cephfs 的 volume 相关的配置，比如 monitors 的地址等等。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line">apiVersion: v1</div><div class="line">kind: Pod</div><div class="line">metadata:</div><div class="line">  name: cephfs</div><div class="line">spec:</div><div class="line">  containers:</div><div class="line">  - name: cephfs-rw</div><div class="line">    image: kubernetes/pause</div><div class="line">    volumeMounts:</div><div class="line">    - mountPath: &quot;/mnt/cephfs&quot;</div><div class="line">      name: cephfs</div><div class="line">  volumes:</div><div class="line">  - name: cephfs</div><div class="line">    cephfs:</div><div class="line">      monitors:</div><div class="line">      - 10.16.154.78:6789</div><div class="line">      - 10.16.154.82:6789</div><div class="line">      - 10.16.154.83:6789</div><div class="line">      # by default the path is /, but you can override and mount a specific path of the filesystem by using the path attribute</div><div class="line">      # path: /some/path/in/side/cephfs </div><div class="line">      user: admin</div><div class="line">      secretFile: &quot;/etc/ceph/admin.secret&quot;</div><div class="line">      readOnly: true</div></pre></td></tr></table></figure>
+<p>但是引入 persistentVolumeClaim 机制后，这些跟存储类型相关的全局配置信息都可以被封装到一个叫做 storageClass[3] 的对象的描述中，比如针对上面的例子，我们可以创建一个叫做 cephfs 的 storageClass 类型</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">apiVersion: storage.k8s.io/v1</div><div class="line">kind: StorageClass</div><div class="line">metadata:</div><div class="line">  name: cephfs</div><div class="line">parameters:</div><div class="line">  adminId: admin</div><div class="line">  adminSecretName: ceph-admin-secret</div><div class="line">  adminSecretNamespace: kube-system</div><div class="line">  monitors: 192.168.213.25:6789,192.168.213.27:6789,192.168.213.28:6789</div><div class="line">provisioner: ceph.com/cephfs</div><div class="line">reclaimPolicy: Delete</div></pre></td></tr></table></figure>
+<p>此时，如果用户还是想要申请一块 cephfs 类型的 volume 来使用的话，它只需要创建一个 persistentVolumeClaim 对象即可，并且该对象中应该写明，希望的 storageClass 为 cephfs，并且还有一些其他的配置要求，比如大小，读写模式等等</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">apiVersion: v1</div><div class="line">kind: PersistentVolumeClaim</div><div class="line">metadata:</div><div class="line">  name: cephfs-pvc</div><div class="line">spec:</div><div class="line">  accessModes:</div><div class="line">  - ReadWriteMany</div><div class="line">  resources:</div><div class="line">    requests:</div><div class="line">      storage: 1Ti</div><div class="line">  storageClassName: cephfs</div></pre></td></tr></table></figure>
+<p>此时，这个 pod 的 volume 就可以修改一下改为使用这个 persistentVolumeClaim</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">apiVersion: v1</div><div class="line">kind: Pod</div><div class="line">metadata:</div><div class="line">  name: cephfs</div><div class="line">spec:</div><div class="line">  containers:</div><div class="line">  - name: cephfs-rw</div><div class="line">    image: kubernetes/pause</div><div class="line">    volumeMounts:</div><div class="line">    - mountPath: &quot;/mnt/cephfs&quot;</div><div class="line">      name: cephfs</div><div class="line">  volumes:</div><div class="line">  - name: cephfs</div><div class="line">    persistentVolumeClaim:</div><div class="line">      claimName: cephfs-pvc</div></pre></td></tr></table></figure>
+<p>可见采用 persistentVolumeClaim 的好处有很多，不仅让接口更加清晰，也让用户对存储资源的管理更加方便。</p>
+<h1 id="persistentVolumeClaim-管理逻辑"><a href="#persistentVolumeClaim-管理逻辑" class="headerlink" title="persistentVolumeClaim 管理逻辑"></a>persistentVolumeClaim 管理逻辑</h1><p>persistentVolumeClaim 机制是现在比较常见的存储使用方式，对于它的理解将非常有助于我们解决对使用 pvc 的 pod 在启动，停止过程中遇到的各种问题。</p>
+<p>那么当我们为一个 pod 创建了一个 pvc ，并且把这个 pod 和这个 pvc 绑定之后都发生了什么事情呢？都有哪些组件参与到了这个过程中呢？</p>
+<p>我们在这一篇博文中仅粗略介绍一下这个 pvc 被申请，被初始化，再到被 pod 所使用的整个流程，并且每一个步骤我们还会通过单独的博文从代码的角度来分析具体的工作逻辑。并且我是针对我们公司使用的一个具体场景来进行介绍（ceph rbd with external provisioner）</p>
+<p>整个 pvc 管理周期主要分为以下几个</p>
+<ul>
+<li>Provisioning</li>
+<li>Binding</li>
+<li>Using</li>
+</ul>
+<h2 id="Provisioning"><a href="#Provisioning" class="headerlink" title="Provisioning"></a>Provisioning</h2><p>当 PVC 被创建后，第一步就是 Provisioning，PersistentVolumeClaim 从字面上来看也可以看出来，它只是一个对存储资源的需求的声明，针对这个声明，kubernetes 需要创造一个相应的“实体”，才能满足这个声明的需求。那么在 kubernetes 中，这个实体就是 PersistentVolume 对象。</p>
+<p>所以如果想要 PersistentVolumeClaim 声明的存储需求被满足，我们就必须有能够满足需求的 PersistentVolume 存在，那么这个 PersistentVolume 是如何被创建出来的呢？</p>
+<p>PersistentVolume 有两种途径被创建</p>
+<ul>
+<li><p>static provisioning: 顾名思义，需要集群管理员，在 PersistentVolumeClaim 还没创建好的时候就要手动创建好一些 PersistentVolume</p>
+</li>
+<li><p>dynamic provisioning: 顾名思义，这种场景下，会有一个组件，去动态获取新创建的 PersistentVolumeClaim 信息，来直接动态创建和这个 pvc 需求相符的 PersistentVolume</p>
+</li>
+</ul>
+<p>其中 dynamic provisioning 是一种更加灵活的方式，社区中已经针对不同的存储技术开发了不同的组件来完成这个 dynamic provisioning 的流程，详情可以参考 <a href="https://github.com/kubernetes-incubator/external-storage" target="_blank" rel="external">https://github.com/kubernetes-incubator/external-storage</a> </p>
+<h2 id="Binding"><a href="#Binding" class="headerlink" title="Binding"></a>Binding</h2><p>在 PersistentVolumeClaim 被创建后，而且也有了被创建好的 PersistentVolume 之后，就要开启 Binding 的步骤。很显然就是要为 PersistentVolumeClaim 选取最为合适的 PersistentVolume。PersistentVolumeClaim 和 PersistentVolume 是一对一的关系，不允许有一对多的关系存在。</p>
+<p>所以当一个 PersistentVolumeClaim 申请了 100G 的容量时，但是目前系统中仅仅存在 200G 的 PersistentVolume 时，k8s 也会把二者 bind 起来</p>
+<p>当然如果 PersistentVolume 是 dynamic provision 的方式创建出来的话，那么这个 PersistentVolumeClaim 和 PersistentVolume 之间的对应关系就已经被建立好了，无需再进行选择。</p>
+<p>这个部分的工作使用 kube-controller-manager 中的 PvController 组件来完成的。</p>
+<p>另外在 bind 之后，kube-controller-manager 中还存在一个 AttachDetachController，这个 controller 的工作是当某个 pvc 所对应的 pod 被调度到某台机器上面之后，AttachDetachController 会在逻辑上先把这个 PersistentVolume 和这个机器 attach 到一起，保证那些不支持多个 pod 共享的 pv 类型不会被同时两个 pod 所使用。</p>
+<h2 id="Using"><a href="#Using" class="headerlink" title="Using"></a>Using</h2><p>最后一步就是 using，也就是说，当某一个使用这个 pvc 的 pod 被调度到某一台机器上以后，每台机器上面的 kubelet 会最终完成对这个 PersistentVolume 的实体化初始化，并且最终 mount 到这个 pod 的容器的指定目录里面去。</p>
+<p>当然这个过程还有很多细节，比如 kubelet 会首先等待 AttachDetachController 把这个 PV 和所在的机器 attach 完成之后再进行后续操作，另外 PV 对应的 volume 会被首先 mount 到一个全局路径下，然后再 remount 到每一个 pod 的某个路径下。这样做是因为有些 PV 是可以支持被多个 Pod 所同时使用的，等等。这一系列的动作都是有 kubelet 中的 volumeManager 来完成的。</p>
+<p>在后面的博文中，我们会针对 volume 整个生命周期中涉及到的所有组件进行一一解析，为大家还原 kubernetes 对 volume 的管理逻辑。</p>
+<h1 id="参考引用"><a href="#参考引用" class="headerlink" title="参考引用"></a>参考引用</h1><ol>
+<li><a href="https://kubernetes.io/docs/concepts/storage/volumes" target="_blank" rel="external">https://kubernetes.io/docs/concepts/storage/volumes</a></li>
+<li><a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes/" target="_blank" rel="external">https://kubernetes.io/docs/concepts/storage/persistent-volumes/</a></li>
+<li><a href="https://kubernetes.io/docs/concepts/storage/storage-classes" target="_blank" rel="external">https://kubernetes.io/docs/concepts/storage/storage-classes</a></li>
+</ol>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
   <link itemprop="mainEntityOfPage" href="http://fatsheep9146.github.io/2018/08/19/Go-项目单元测试最佳实践/">
 
   <span style="display:none" itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1108,7 +1315,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives">
-                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-count">6</span>
                 <span class="site-state-item-name">posts</span>
               </a>
             </div>
